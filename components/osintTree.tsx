@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { hierarchy, tree, type HierarchyPointNode } from "d3-hierarchy";
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "./ui/drawer";
+import { Button, buttonVariants } from "./ui/button";
 
 type Resource = {
     id: string;
@@ -39,6 +41,17 @@ const NODE_HEIGHT = 42;
 const HORIZONTAL_GAP = 250;
 const MARGIN = { top: 28, right: 32, bottom: 28, left: 24 };
 
+
+
+const SNAP_POINTS = ["31rem", 1]
+
+// function ResourceInformation() {
+
+//     return (<></>);
+
+
+// }
+
 export default function OsintTree({ data }: Props) {
     const [expanded, setExpanded] = useState<Record<string, boolean>>({});
     const resetTree = () => {
@@ -47,6 +60,22 @@ export default function OsintTree({ data }: Props) {
     };
     const [query, setQuery] = useState("");
     const search = query.trim().toLowerCase();
+
+    const [selectedResource, setSelectedResource] = useState<HierarchyPointNode<TreeNode> | null>(null);
+
+    const breadcrumbs = useMemo(() => {
+        const path: TreeNode[] = [];
+        let current = selectedResource;
+
+        while (current) {
+            path.unshift(current.data);
+            current = current.parent;
+        }
+
+        return path;
+    }, [selectedResource]);
+
+
 
     const rootData = useMemo<TreeNode>(() => ({
         id: "osint-root",
@@ -77,7 +106,9 @@ export default function OsintTree({ data }: Props) {
 
             const children = (node.children || [])
                 .map(filterResources)
-                .filter((child): child is TreeNode => child !== null);
+                .filter((child): child is TreeNode => child !== null
+                );
+
 
             if (node.kind === "root") return { ...node, children };
 
@@ -93,10 +124,12 @@ export default function OsintTree({ data }: Props) {
     }, [rootData, expanded, search]);
 
     const layout = useMemo(() => {
+
         const root = hierarchy<TreeNode>(visibleData, (node) => node.children);
         const positionedRoot = tree<TreeNode>().nodeSize([NODE_HEIGHT, HORIZONTAL_GAP])(root);
         const nodes = positionedRoot.descendants();
         const links = positionedRoot.links();
+
         const minX = Math.min(0, ...nodes.map((node) => node.x));
         const maxX = Math.max(0, ...nodes.map((node) => node.x));
         const maxY = Math.max(0, ...nodes.map((node) => node.y));
@@ -142,6 +175,34 @@ export default function OsintTree({ data }: Props) {
             </div>
 
             <div className="w-full overflow-auto h-full">
+                <Drawer
+                    snapPoints={SNAP_POINTS} showSwipeHandle
+                    open={selectedResource !== null}
+                    onOpenChange={(open) => {
+                        if (!open) setSelectedResource(null);
+                    }}
+                >
+                    <DrawerContent className="bg-background">
+                        <DrawerHeader>
+                            <DrawerTitle>{selectedResource?.data.name}</DrawerTitle>
+                            <nav className="text-xs"  aria-label="Breadcrumb">
+                                {breadcrumbs.map((node, index) => (
+                                    <span className="italic opacity-25" key={node.id}>
+                                        {index > 0 && " | "}
+                                        {node.name}
+                                    </span>
+                                ))}
+                            </nav>
+                            <DrawerDescription className="text-md text-center font-sans">
+                                
+                            </DrawerDescription>
+                            <a href={selectedResource?.data.url} className={buttonVariants({variant: "secondary", size: "lg", className: "bg-blue-600 py-4 px-8"})}>Go to Link</a>
+                        </DrawerHeader>
+                        <div className="flex-1 p-4">
+                            <div className="rounded-2xl bg-muted group-data-[swipe-axis=x]/drawer-popup:size-full group-data-[swipe-axis=y]/drawer-popup:h-80 group-data-[swipe-axis=y]/drawer-popup:w-full" />
+                        </div>
+                    </DrawerContent>
+                </Drawer>
                 <svg
                     role="tree"
                     aria-label="OSINT resource tree"
@@ -173,22 +234,41 @@ export default function OsintTree({ data }: Props) {
                         const isExpanded = Boolean(search || expanded[item.id]);
 
                         return (
-                            <g key={item.id} transform={`translate(${x}, ${y})`}>
+                            <g role="button" tabIndex={0} key={item.id} transform={`translate(${x}, ${y})`}
+                                onClick={() => {
+                                    if (isResource && item.url) {
+                                        console.log(node);
+
+                                        setSelectedResource(node);
+                                    }
+                                }}
+
+                            >
                                 {isResource && item.url ? (
-                                    <a href={item.url} target="_blank" rel="noopener noreferrer">
+                                    <>
                                         <rect
-                                            x="0" y="-16" width={width} height="34" rx="7"
+                                            x="0"
+                                            y="-16"
+                                            width={width}
+                                            height="34"
+                                            rx="7"
                                             fill="var(--osint-resource-fill, #f8fafc)"
                                             stroke="var(--osint-resource-stroke, #cbd5e1)"
                                         />
                                         <text
-                                            x="10" y="1" dominantBaseline="middle" fontSize="12"
+                                            x="10"
+                                            y="1"
+                                            dominantBaseline="middle"
+                                            fontSize="12"
                                             fill="var(--osint-resource-text, #334155)"
+                                            pointerEvents="none"
                                         >
-                                            {item.name.length > 27 ? `${item.name.slice(0, 26)}…` : item.name}
+                                            {item.name.length > 27
+                                                ? `${item.name.slice(0, 26)}…`
+                                                : item.name}
                                         </text>
                                         <title>{`${item.name}\n${item.url}`}</title>
-                                    </a>
+                                    </>
                                 ) : (
                                     <g
                                         role="treeitem"
