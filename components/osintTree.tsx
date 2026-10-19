@@ -1,9 +1,9 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { hierarchy, tree, type HierarchyPointNode } from "d3-hierarchy";
-import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "./ui/drawer";
-import { Button, buttonVariants } from "./ui/button";
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "./ui/drawer";
+import { buttonVariants } from "./ui/button";
 import { ModeToggle } from "./toggleTheme";
 
 type Resource = {
@@ -41,11 +41,7 @@ type Props = { data: OsintData };
 const NODE_HEIGHT = 42;
 const HORIZONTAL_GAP = 250;
 const MARGIN = { top: 28, right: 32, bottom: 28, left: 24 };
-
-
-
 const SNAP_POINTS = ["31rem", 1]
-
 
 
 export default function OsintTree({ data }: Props) {
@@ -56,7 +52,6 @@ export default function OsintTree({ data }: Props) {
     };
     const [query, setQuery] = useState("");
     const search = query.trim().toLowerCase();
-
     const [selectedResource, setSelectedResource] = useState<HierarchyPointNode<TreeNode> | null>(null);
 
     const breadcrumbs = useMemo(() => {
@@ -70,8 +65,6 @@ export default function OsintTree({ data }: Props) {
 
         return path;
     }, [selectedResource]);
-
-
 
     const rootData = useMemo<TreeNode>(() => ({
         id: "osint-root",
@@ -154,15 +147,16 @@ export default function OsintTree({ data }: Props) {
 
     return (
         <section className="w-full h-full space-y-3">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between px-2 py-1">
                 <div>
                     <h2 className="text-lg font-semibold">{data.title || "OSINT Resources"}</h2>
                     <p className="text-sm text-muted-foreground">
                         Expand categories to explore resources, or search by name or URL.
                     </p>
                 </div>
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                     <input
+                        name="searchByResource"
                         value={query}
                         onChange={(event) => setQuery(event.target.value)}
                         placeholder="Search resources..."
