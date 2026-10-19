@@ -1,13 +1,13 @@
 "use client";
 
-import { Dispatch, SetStateAction, useMemo, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react";
 import { hierarchy, tree, type HierarchyPointNode } from "d3-hierarchy";
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "./ui/drawer";
 import { Button, buttonVariants } from "./ui/button";
 import { ModeToggle } from "./toggleTheme";
 import { motion } from "motion/react";
 import { Badge } from "./ui/badge";
-import { Copy } from "lucide-react";
+import { Copy, ExternalLink, Star } from "lucide-react";
 
 type Resource = {
     id: string;
@@ -54,6 +54,8 @@ type ResourceDrawerProps = {
     setSelectedResource: Dispatch<
         SetStateAction<HierarchyPointNode<TreeNode> | null>
     >;
+    favorites: Set<string>;
+    toggleFavorite: (id: string) => Set<string> | void;
 };
 
 const NODE_HEIGHT = 42;
@@ -64,7 +66,57 @@ const LINK_DURATION = 0.45;
 const BRANCH_GAP = 0.02;
 
 
-function ResourceDrawer({ selectedResource, setSelectedResource }: ResourceDrawerProps) {
+function useFavorites() {
+    const [favorites, setFavorites] = useState<Set<string>>(new Set());
+    const [favoritesLoaded, setFavoritesLoaded] = useState(false);
+
+    // Retrieve favorites on mount
+    useEffect(() => {
+        const stored = localStorage.getItem("osint-favorites");
+
+        if (stored) {
+            setFavorites(new Set<string>(JSON.parse(stored)));
+        }
+
+        setFavoritesLoaded(true);
+    }, []);
+
+    // Persist favorites whenever they change
+    useEffect(() => {
+        if (!favoritesLoaded) return;
+
+        localStorage.setItem(
+            "osint-favorites",
+            JSON.stringify([...favorites])
+        );
+    }, [favorites, favoritesLoaded]);
+
+    const toggleFavorite = (id: string) => {
+        setFavorites((prev) => {
+            const next = new Set(prev);
+
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+
+            return next;
+        });
+    };
+
+
+    return { toggleFavorite, favorites }
+}
+
+
+function ResourceDrawer({
+    selectedResource,
+    setSelectedResource,
+    favorites,
+    toggleFavorite,
+}: ResourceDrawerProps) {
+
     const breadcrumbs = useMemo(() => {
         const path: TreeNode[] = [];
         let current = selectedResource;
@@ -111,6 +163,7 @@ function ResourceDrawer({ selectedResource, setSelectedResource }: ResourceDrawe
                     </DrawerDescription>
 
                     <div className="flex flex-wrap justify-center gap-3 pt-3">
+
                         <a
                             href={selectedResource?.data.url}
                             target="_blank"
@@ -121,6 +174,7 @@ function ResourceDrawer({ selectedResource, setSelectedResource }: ResourceDrawe
                                 className: "bg-blue-600 px-8 py-4 hover:text-white hover:bg-blue-500",
                             })}
                         >
+                            <ExternalLink />
                             Go to Link
                         </a>
 
@@ -136,6 +190,24 @@ function ResourceDrawer({ selectedResource, setSelectedResource }: ResourceDrawe
                             >
                                 <Copy className="mr-2 h-4 w-4" />
                                 Copy URL
+                            </Button>
+                        )}
+
+                        {selectedResource?.data.id && (
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                onClick={() => toggleFavorite(selectedResource.data.id)}
+                            >
+                                <Star
+                                    className={`mr-2 h-4 w-4 ${favorites.has(selectedResource.data.id)
+                                        ? "fill-yellow-400 text-yellow-400"
+                                        : ""
+                                        }`}
+                                />
+                                {favorites.has(selectedResource.data.id)
+                                    ? "Remove from Favorites"
+                                    : "Add to Favorites"}
                             </Button>
                         )}
                     </div>
@@ -184,7 +256,7 @@ function ResourceDrawer({ selectedResource, setSelectedResource }: ResourceDrawe
                     )}
                 </div>
             </DrawerContent>
-        </Drawer>
+        </Drawer >
     )
 }
 
@@ -198,6 +270,9 @@ export default function OsintTree({ data }: Props) {
     const [query, setQuery] = useState("");
     const search = query.trim().toLowerCase();
     const [selectedResource, setSelectedResource] = useState<HierarchyPointNode<TreeNode> | null>(null)
+    const { favorites, toggleFavorite } = useFavorites()
+
+
 
     const rootData = useMemo<TreeNode>(() => ({
         id: "osint-root",
@@ -224,6 +299,12 @@ export default function OsintTree({ data }: Props) {
     }), [data]);
 
     const visibleData = useMemo<TreeNode>(() => {
+        const favoritesOnly = search.startsWith("@favorites");
+        const searchTerm = favoritesOnly
+            ? search.slice("@favorites".length).trim()
+            : search;
+
+
         const filterResources = (node: TreeNode): TreeNode | null => {
             if (node.kind === "resource") {
                 const haystack = [
@@ -238,7 +319,17 @@ export default function OsintTree({ data }: Props) {
                     .join(" ")
                     .toLowerCase();
 
-                return !search || haystack.includes(search) ? { ...node, children: undefined } : null;
+                const matchesFavorites =
+                    !favoritesOnly || favorites.has(node.id);
+
+                const matchesSearch =
+                    !searchTerm || haystack.includes(searchTerm);
+
+                return matchesFavorites && matchesSearch
+                    ? { ...node, children: undefined }
+                    : null;
+
+
             }
 
             const children = (node.children || [])
@@ -258,7 +349,7 @@ export default function OsintTree({ data }: Props) {
         };
 
         return filterResources(rootData) || { ...rootData, children: [] };
-    }, [rootData, expanded, search]);
+    }, [rootData, expanded, search, favorites]);
 
     const layout = useMemo(() => {
 
@@ -325,16 +416,29 @@ export default function OsintTree({ data }: Props) {
                         name="searchByResource"
                         value={query}
                         onChange={(event) => setQuery(event.target.value)}
-                        placeholder="Search resources..."
+                        placeholder="Search resources or @favorites [term]..."
                         aria-label="Search OSINT resources"
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm sm:max-w-xs"
+                        className="w-full rounded-md border bg-background px-3 py-2 text-sm sm:w-80 sm:max-w-none"
                     />
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setQuery("@favorites")}
+                    >
+                        <Star className="h-[1.2rem] w-[1.2rem]" />
+                        <span className="sr-only">Display only your favorites</span>
+
+                    </Button>
                     <ModeToggle />
                 </div>
             </div>
 
             <div className="w-full overflow-auto h-full">
-                <ResourceDrawer {...{ selectedResource, setSelectedResource }} />
+                <ResourceDrawer
+                    selectedResource={selectedResource}
+                    setSelectedResource={setSelectedResource}
+                    favorites={favorites}
+                    toggleFavorite={toggleFavorite} />
                 <svg
                     role="tree"
                     aria-label="OSINT resource tree"
