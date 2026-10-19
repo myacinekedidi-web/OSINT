@@ -146,10 +146,6 @@ function ResourceDrawer({ selectedResource, setSelectedResource }: ResourceDrawe
                     {selectedResource?.data.tags &&
                         selectedResource.data.tags.length > 0 && (
                             <section className="space-y-2">
-                                <h3 className="text-sm font-semibold">
-                                    Tags
-                                </h3>
-
                                 <div className="flex flex-wrap gap-2">
                                     {selectedResource.data.tags.map((tag) => (
                                         <Badge
@@ -219,6 +215,10 @@ export default function OsintTree({ data }: Props) {
                 kind: "resource" as const,
                 url: resource.url,
                 description: resource.description,
+                tags: resource.tags,
+                bestFor: resource.bestFor,
+                caution: resource.caution
+
             })),
         })),
     }), [data]);
@@ -226,7 +226,18 @@ export default function OsintTree({ data }: Props) {
     const visibleData = useMemo<TreeNode>(() => {
         const filterResources = (node: TreeNode): TreeNode | null => {
             if (node.kind === "resource") {
-                const haystack = `${node.name} ${node.url || ""} ${node.description || ""}`.toLowerCase();
+                const haystack = [
+                    node.name,
+                    node.url,
+                    node.description,
+                    ...(node.tags ?? []),
+                    node.bestFor,
+                    node.caution,
+                ]
+                    .filter(Boolean)
+                    .join(" ")
+                    .toLowerCase();
+
                 return !search || haystack.includes(search) ? { ...node, children: undefined } : null;
             }
 
