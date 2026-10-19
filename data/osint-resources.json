@@ -1,7 +1,7 @@
 {
   "title": "OSINT-Resources",
   "version": 1,
-  "description": "A categorized directory of OSINT resources.",
+  "description": "A categorized directory of OSINT resources with concise usage guidance, tags, suggested use cases, and cautions for responsible verification.",
   "categories": [
     {
       "id": "general-search",
@@ -12,64 +12,99 @@
           "id": "addresses-com",
           "name": "Addresses.com",
           "url": "https://www.addresses.com/",
-          "description": "",
+          "description": "People-search directory that may help locate publicly listed contact and address information, primarily for U.S.-focused searches.",
           "tags": [
-            "general-search"
-          ]
+            "people-search",
+            "address-lookup",
+            "public-records",
+            "contact-information"
+          ],
+          "bestFor": "Starting a search for publicly listed address or contact details.",
+          "caution": "Coverage and accuracy vary. Confirm any match with independent sources; avoid using results to harass or expose private individuals."
         },
         {
           "id": "epieos-com",
           "name": "Epieos",
           "url": "https://epieos.com/",
-          "description": "",
+          "description": "OSINT service associated with searching identifiers such as email addresses and usernames for publicly discoverable account-related information.",
           "tags": [
-            "general-search"
-          ]
+            "email-search",
+            "username-search",
+            "account-discovery",
+            "identity-research"
+          ],
+          "bestFor": "Exploring possible public account associations for an identifier.",
+          "caution": "A matching result is only a lead, not proof that accounts belong to the same person. Check the site's current features and terms."
         },
         {
           "id": "idcrawl-com",
           "name": "IDCrawl",
           "url": "https://www.idcrawl.com/",
-          "description": "",
+          "description": "People-search and social-profile search site that aggregates publicly discoverable profile references across websites.",
           "tags": [
-            "general-search"
-          ]
+            "people-search",
+            "social-profiles",
+            "username-search",
+            "public-web"
+          ],
+          "bestFor": "Finding public profile pages that may be associated with a name or handle.",
+          "caution": "Aggregated results can be outdated or refer to different people; verify each result independently."
         },
         {
           "id": "osint-industries",
           "name": "OSINT Industries",
           "url": "https://www.osint.industries/",
-          "description": "",
+          "description": "OSINT search platform for exploring publicly available information connected to identifiers such as email addresses, usernames, or phone numbers; available features may depend on its current offering.",
           "tags": [
-            "general-search"
-          ]
+            "email-search",
+            "username-search",
+            "phone-search",
+            "identity-research"
+          ],
+          "bestFor": "Pivoting from a known identifier to possible public references.",
+          "caution": "Check current access requirements, pricing, and terms. Treat associations as unverified leads."
         },
         {
           "id": "thatsthem-com",
           "name": "That'sThem",
           "url": "https://thatsthem.com/",
-          "description": "",
+          "description": "People-search directory that can surface publicly listed contact, location, and related records, with coverage focused largely on the United States.",
           "tags": [
-            "general-search"
-          ]
+            "people-search",
+            "contact-information",
+            "address-lookup",
+            "public-records"
+          ],
+          "bestFor": "Checking whether publicly listed U.S. contact details appear in directory results.",
+          "caution": "Results may be incomplete, stale, or mismatched. Respect applicable privacy laws and site terms."
         },
         {
           "id": "usa-people-search-com",
           "name": "USA People Search",
           "url": "https://www.usa-people-search.com/",
-          "description": "",
+          "description": "U.S.-oriented people-search directory for looking up publicly listed names, locations, and possible contact or record references.",
           "tags": [
-            "general-search"
-          ]
+            "people-search",
+            "us-focused",
+            "contact-information",
+            "public-records"
+          ],
+          "bestFor": "Searching public directory information about a U.S.-based person.",
+          "caution": "Do not treat directory matches as verified identity. Review the provider's privacy practices and applicable legal restrictions."
         },
         {
           "id": "whitepages-com",
           "name": "Whitepages",
           "url": "https://www.whitepages.com/people-search",
-          "description": "",
+          "description": "People-search and directory service that may provide publicly listed names, phone numbers, addresses, and related U.S. directory information.",
           "tags": [
-            "general-search"
-          ]
+            "people-search",
+            "phone-lookup",
+            "address-lookup",
+            "public-directory"
+          ],
+          "bestFor": "Checking publicly listed U.S. contact or directory information.",
+          "caution": "Some details or features may require payment. Validate results with authoritative or independent sources."
         }
       ]
     },
@@ -82,10 +117,15 @@
           "id": "whatsmyname-app",
           "name": "WhatsMyName",
           "url": "https://whatsmyname.app/",
-          "description": "",
+          "description": "Username-search tool that checks many supported websites for profile pages matching a supplied handle.",
           "tags": [
-            "username-search"
-          ]
+            "username-search",
+            "social-profiles",
+            "account-discovery",
+            "cross-platform"
+          ],
+          "bestFor": "Finding candidate public profiles that use the same username across supported sites.",
+          "caution": "A reused handle does not establish that profiles belong to one person; inspect each result and account context."
         }
       ]
     },
@@ -98,10 +138,15 @@
           "id": "haveibeenpwned-com",
           "name": "Have I Been Pwned",
           "url": "https://haveibeenpwned.com/",
-          "description": "",
+          "description": "Breach-notification service for checking whether an email address appears in known data breaches and reviewing related exposure information.",
           "tags": [
-            "email-search"
-          ]
+            "email-security",
+            "data-breaches",
+            "account-security",
+            "exposure-check"
+          ],
+          "bestFor": "Checking an address you own or are authorized to assess for known breach exposure.",
+          "caution": "A result does not reveal every possible compromise, and no result does not guarantee an account is safe. Never enter passwords into untrusted sites."
         }
       ]
     },
@@ -114,19 +159,29 @@
           "id": "phonevalidator-com",
           "name": "PhoneValidator",
           "url": "https://www.phonevalidator.com/",
-          "description": "",
+          "description": "Phone-number lookup and validation service that may provide number-format, line-type, carrier, or location-related information depending on coverage.",
           "tags": [
-            "phone-search"
-          ]
+            "phone-lookup",
+            "number-validation",
+            "carrier-lookup",
+            "contact-research"
+          ],
+          "bestFor": "Checking whether a phone number is formatted plausibly and reviewing available line details.",
+          "caution": "Number portability, VoIP services, and regional coverage can make carrier or location information inaccurate."
         },
         {
           "id": "whocalld-com",
           "name": "WhoCalled",
           "url": "https://whocalld.com/",
-          "description": "",
+          "description": "Phone-number lookup and caller-report directory that can help review public reports associated with a number.",
           "tags": [
-            "phone-search"
-          ]
+            "phone-lookup",
+            "caller-reports",
+            "spam-check",
+            "reverse-phone"
+          ],
+          "bestFor": "Reviewing community reports about an unfamiliar caller.",
+          "caution": "User-submitted reports can be wrong or malicious; do not treat them as verified claims about a person."
         }
       ]
     },
@@ -139,10 +194,15 @@
           "id": "whois-domaintools-com",
           "name": "DomainTools WHOIS",
           "url": "https://whois.domaintools.com/",
-          "description": "",
+          "description": "WHOIS lookup interface for reviewing available domain-registration data, such as registrar, registration dates, and nameservers.",
           "tags": [
-            "website-research"
-          ]
+            "domain-research",
+            "whois",
+            "registration-data",
+            "infrastructure"
+          ],
+          "bestFor": "Gathering registration details and basic context about a domain.",
+          "caution": "Privacy protection, registry policies, and newer registration systems can hide or limit registrant details."
         }
       ]
     },
@@ -155,19 +215,27 @@
           "id": "grabify-link",
           "name": "Grabify",
           "url": "https://grabify.link/",
-          "description": "",
+          "description": "Link-generation service that can log connection metadata, potentially including an IP address, when someone opens a generated link.",
           "tags": [
-            "ip-loggers"
-          ]
+            "link-analytics",
+            "ip-logging",
+            "network-metadata"
+          ],
+          "bestFor": "Authorized testing or transparent link analytics where visitors understand what is collected.",
+          "caution": "Use only with informed consent and lawful authorization. IP addresses are sensitive metadata and do not reliably identify a person or precise location."
         },
         {
           "id": "iplogger-org",
           "name": "IPLogger",
           "url": "https://iplogger.org/",
-          "description": "",
+          "description": "Link and pixel logging service that may record connection metadata when a tracked resource is accessed.",
           "tags": [
-            "ip-loggers"
-          ]
+            "link-analytics",
+            "ip-logging",
+            "network-metadata"
+          ],
+          "bestFor": "Authorized diagnostics or consent-based analytics.",
+          "caution": "Use only with informed consent and lawful authorization. Do not use tracking links to deceive, stalk, or expose people."
         }
       ]
     },
@@ -180,37 +248,53 @@
           "id": "bing-com",
           "name": "Bing Images",
           "url": "https://www.bing.com/images",
-          "description": "",
+          "description": "Bing Images search, which supports searching for visually similar images and finding pages where images appear.",
           "tags": [
-            "reverse-image-search"
-          ]
+            "reverse-image-search",
+            "image-discovery",
+            "visual-verification"
+          ],
+          "bestFor": "Finding visually similar images and possible source pages.",
+          "caution": "Results depend on indexing and can miss matches. Similar imagery alone does not prove that two images depict the same person or event."
         },
         {
           "id": "google-com",
           "name": "Google Search (image search)",
           "url": "https://www.google.com/search?udm=49&udf=257",
-          "description": "",
+          "description": "Google image-search entry point for discovering visually similar images and webpages containing related imagery.",
           "tags": [
-            "reverse-image-search"
-          ]
+            "reverse-image-search",
+            "image-discovery",
+            "source-finding"
+          ],
+          "bestFor": "Looking for copies, visually related images, or pages associated with an image.",
+          "caution": "Search features and URL parameters may change; verify results at the destination site."
         },
         {
           "id": "pimeyes-com",
           "name": "PimEyes",
           "url": "https://pimeyes.com/en",
-          "description": "",
+          "description": "Face-search service designed to find web images that may contain a similar face.",
           "tags": [
-            "reverse-image-search"
-          ]
+            "face-search",
+            "reverse-image-search",
+            "image-discovery"
+          ],
+          "bestFor": "Finding candidate web-image matches for a face in contexts where use is lawful and appropriate.",
+          "caution": "Face matches can be false positives and are not identity verification. Consider consent, privacy, and local laws before submitting face images."
         },
         {
           "id": "yandex-com",
           "name": "Yandex Images",
           "url": "https://yandex.com/images/",
-          "description": "",
+          "description": "Yandex Images search for finding visually similar images and webpages associated with image content.",
           "tags": [
-            "reverse-image-search"
-          ]
+            "reverse-image-search",
+            "image-discovery",
+            "visual-verification"
+          ],
+          "bestFor": "Cross-checking an image with a second image-search engine.",
+          "caution": "Coverage differs across search engines; corroborate findings with other evidence and original sources."
         }
       ]
     },
@@ -223,37 +307,56 @@
           "id": "bop-gov",
           "name": "Federal Bureau of Prisons Inmate Locator",
           "url": "https://www.bop.gov/inmateloc/",
-          "description": "",
+          "description": "Official U.S. Federal Bureau of Prisons inmate locator for searching federal inmates within the scope described by the agency.",
           "tags": [
-            "criminal-records-search"
-          ]
+            "official-records",
+            "us-federal",
+            "inmate-search",
+            "government-source"
+          ],
+          "bestFor": "Checking federal Bureau of Prisons custody records using the agency's supported search fields.",
+          "caution": "It does not cover every jail, state prison, or historical record. Use official jurisdictional sources and verify identifiers carefully."
         },
         {
           "id": "familywatchdog-us",
           "name": "Family Watchdog",
           "url": "https://www.familywatchdog.us/",
-          "description": "",
+          "description": "Public-facing site for searching sex-offender registry information by location and related criteria in supported areas.",
           "tags": [
-            "criminal-records-search"
-          ]
+            "public-records",
+            "registry-search",
+            "us-focused",
+            "location-search"
+          ],
+          "bestFor": "Finding registry references that can then be checked against official state or jurisdictional sources.",
+          "caution": "Confirm any result with the official registry. Never use registry information to threaten, harass, or unlawfully discriminate against someone."
         },
         {
           "id": "mugshots-com",
           "name": "Mugshots.com",
           "url": "https://mugshots.com/",
-          "description": "",
+          "description": "Third-party site that publishes arrest-related booking photographs or records where available.",
           "tags": [
-            "criminal-records-search"
-          ]
+            "arrest-records",
+            "booking-photos",
+            "third-party-records"
+          ],
+          "bestFor": "Locating a possible arrest-record reference for further verification.",
+          "caution": "An arrest is not a conviction, and third-party records may be incomplete, outdated, or misattributed. Prefer official court or agency records."
         },
         {
           "id": "nsopw-gov",
           "name": "National Sex Offender Public Website",
           "url": "https://www.nsopw.gov/?home=",
-          "description": "",
+          "description": "The U.S. Department of Justice's national search portal for participating public sex-offender registry records.",
           "tags": [
-            "criminal-records-search"
-          ]
+            "official-records",
+            "us-government",
+            "registry-search",
+            "public-safety"
+          ],
+          "bestFor": "Searching participating U.S. jurisdictions and following through to relevant registry information.",
+          "caution": "Coverage and update timing depend on participating jurisdictions. Verify details with the linked official registry and follow applicable laws."
         }
       ]
     },
@@ -266,19 +369,29 @@
           "id": "app-any-run",
           "name": "ANY.RUN",
           "url": "https://app.any.run/",
-          "description": "",
+          "description": "Interactive malware-analysis sandbox for observing the behavior of suspicious files or URLs in an isolated analysis environment.",
           "tags": [
-            "malware-analysis"
-          ]
+            "malware-analysis",
+            "sandbox",
+            "url-analysis",
+            "threat-research"
+          ],
+          "bestFor": "Inspecting suspicious samples in a controlled environment as part of authorized security analysis.",
+          "caution": "Do not upload confidential or sensitive files unless you understand the service's sharing and retention policies. Never execute suspicious samples on your everyday device."
         },
         {
           "id": "virustotal-com",
           "name": "VirusTotal",
           "url": "https://www.virustotal.com/gui/home/upload",
-          "description": "",
+          "description": "Service that aggregates security-vendor detections and other analysis signals for files, URLs, domains, and IP addresses.",
           "tags": [
-            "malware-analysis"
-          ]
+            "malware-analysis",
+            "url-reputation",
+            "file-scanning",
+            "threat-intelligence"
+          ],
+          "bestFor": "Checking whether security vendors or community signals flag a file or indicator.",
+          "caution": "Detection results can be false positives or false negatives. Submissions may be shared with security partners or the community; review privacy terms before uploading sensitive material."
         }
       ]
     },
@@ -291,19 +404,28 @@
           "id": "gamerdvr-com",
           "name": "GamerDVR",
           "url": "https://gamerdvr.com/",
-          "description": "",
+          "description": "Xbox-related community service for finding or viewing gaming clips and profile-related content where available.",
           "tags": [
-            "xbox"
-          ]
+            "xbox",
+            "gaming-profiles",
+            "game-clips",
+            "public-content"
+          ],
+          "bestFor": "Looking for publicly accessible gaming clips or profile-related references.",
+          "caution": "Availability depends on account privacy settings and service support. Do not assume a profile or clip proves a real-world identity."
         },
         {
           "id": "xresolver-com",
           "name": "XResolver",
           "url": "https://xresolver.com/",
-          "description": "",
+          "description": "Third-party gaming-related lookup service associated with resolving gamer identifiers and network-related records.",
           "tags": [
-            "xbox"
-          ]
+            "xbox",
+            "gaming-identifiers",
+            "network-metadata"
+          ],
+          "bestFor": "Understanding publicly described gaming-identifier lookup capabilities for defensive or authorized research.",
+          "caution": "Use particular care with IP-related data: do not target, harass, or expose players. Results can be inaccurate and may raise privacy or platform-policy concerns."
         }
       ]
     }
