@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { hierarchy, tree, type HierarchyPointNode } from "d3-hierarchy";
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "./ui/drawer";
 import { Button, buttonVariants } from "./ui/button";
+import { ModeToggle } from "./toggleTheme";
 
 type Resource = {
     id: string;
@@ -45,12 +46,7 @@ const MARGIN = { top: 28, right: 32, bottom: 28, left: 24 };
 
 const SNAP_POINTS = ["31rem", 1]
 
-// function ResourceInformation() {
 
-//     return (<></>);
-
-
-// }
 
 export default function OsintTree({ data }: Props) {
     const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -165,13 +161,16 @@ export default function OsintTree({ data }: Props) {
                         Expand categories to explore resources, or search by name or URL.
                     </p>
                 </div>
-                <input
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Search resources..."
-                    aria-label="Search OSINT resources"
-                    className="w-full rounded-md border bg-background px-3 py-2 text-sm sm:max-w-xs"
-                />
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                    <input
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder="Search resources..."
+                        aria-label="Search OSINT resources"
+                        className="w-full rounded-md border bg-background px-3 py-2 text-sm sm:max-w-xs"
+                    />
+                    <ModeToggle />
+                </div>
             </div>
 
             <div className="w-full overflow-auto h-full">
@@ -185,7 +184,7 @@ export default function OsintTree({ data }: Props) {
                     <DrawerContent className="bg-background">
                         <DrawerHeader>
                             <DrawerTitle>{selectedResource?.data.name}</DrawerTitle>
-                            <nav className="text-xs"  aria-label="Breadcrumb">
+                            <nav className="text-xs" aria-label="Breadcrumb">
                                 {breadcrumbs.map((node, index) => (
                                     <span className="italic opacity-25" key={node.id}>
                                         {index > 0 && " | "}
@@ -194,9 +193,9 @@ export default function OsintTree({ data }: Props) {
                                 ))}
                             </nav>
                             <DrawerDescription className="text-md text-center font-sans">
-                                
+
                             </DrawerDescription>
-                            <a href={selectedResource?.data.url} className={buttonVariants({variant: "secondary", size: "lg", className: "bg-blue-600 py-4 px-8"})}>Go to Link</a>
+                            <a href={selectedResource?.data.url} className={buttonVariants({ variant: "secondary", size: "lg", className: "bg-blue-600 py-4 px-8" })}>Go to Link</a>
                         </DrawerHeader>
                         <div className="flex-1 p-4">
                             <div className="rounded-2xl bg-muted group-data-[swipe-axis=x]/drawer-popup:size-full group-data-[swipe-axis=y]/drawer-popup:h-80 group-data-[swipe-axis=y]/drawer-popup:w-full" />
