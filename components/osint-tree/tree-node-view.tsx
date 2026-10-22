@@ -28,6 +28,23 @@ export function TreeNodeView({ node, x, y, revealDelay, isExpanded, onActivate }
     const isResource = item.kind === "resource";
     const width = NODE_WIDTHS[item.kind];
 
+    // Category badge: "matched/total" while filtering (e.g. "2/4"), otherwise just the total
+    const countLabel = isCategory
+        ? item.matchedCount !== undefined
+            ? `${item.matchedCount}/${item.count}`
+            : `${item.count}`
+        : "";
+
+    // Tooltip for root/category nodes. Categories add a count line to their description.
+    const tooltip = isCategory
+        ? [
+            item.description || item.name,
+            item.matchedCount !== undefined
+                ? `${item.matchedCount} of ${item.count} resources match.`
+                : `${item.count} ${item.count === 1 ? "resource" : "resources"}.`,
+        ].join("\n")
+        : item.description || item.name;
+
     const activate = () => onActivate(node);
 
     // Keyboard accessibility: Enter or Space does the same as a click
@@ -151,11 +168,11 @@ export function TreeNodeView({ node, x, y, revealDelay, isExpanded, onActivate }
                                 opacity="0.7"
                                 fill="var(--osint-category-text, #0f172a)"
                             >
-                                {item.count}
+                                {countLabel}
                             </text>
                         )}
-                        {/* Native tooltip with the category description */}
-                        <title>{item.description || item.name}</title>
+                        {/* Native tooltip with the description (and, for categories, how many resources match) */}
+                        <title>{tooltip}</title>
                     </g>
                 )}
             </motion.g>

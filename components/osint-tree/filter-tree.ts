@@ -97,8 +97,8 @@ export function matchesResource(
 /**
  * Returns the subtree that should currently be displayed. Never modifies `root`.
  *  - The root is always kept, even when nothing matches (it then has no children).
- *  - With a query: only matching resources remain, categories auto-expand, and
- *    categories without matches are dropped.
+ *  - With a query: only matching resources remain, categories auto-expand and get a
+ *    `matchedCount`, and categories without matches are dropped.
  *  - Without a query: a category shows its resources only if the user expanded it.
  */
 export function filterTree(
@@ -122,8 +122,13 @@ export function filterTree(
 
         if (node.kind === "root") return { ...node, children };
 
-        // While filtering, categories auto-expand but are hidden if nothing matches
-        if (query.hasQuery) return children.length ? { ...node, children } : null;
+        // While filtering, categories auto-expand but are hidden if nothing matches.
+        // `matchedCount` records how many of the category's resources matched (`count` stays the total).
+        if (query.hasQuery) {
+            return children.length
+                ? { ...node, children, matchedCount: children.length }
+                : null;
+        }
 
         // Not filtering: only show a category's children if the user expanded it
         return { ...node, children: expanded[node.id] ? children : undefined };

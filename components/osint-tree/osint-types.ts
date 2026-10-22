@@ -41,7 +41,12 @@ export type TreeNode = {
     tags?: string[];
     bestFor?: string;
     caution?: string;
-    /** Number of resources in a category (displayed as a badge on category nodes). */
+    /** Total number of resources in a category (displayed as a badge on category nodes). */
     count?: number;
+    /**
+     * How many of a category's resources match the current query. Only set on categories
+     * while a query is active (undefined otherwise); the badge then reads "matched/count".
+     */
+    matchedCount?: number;
     children?: TreeNode[];
 };
