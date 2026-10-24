@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { HierarchyPointNode } from "d3-hierarchy";
-import { motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/toggleTheme";
@@ -12,8 +12,10 @@ import { filterTree, parseQuery, toggleFavoritesToken } from "./osint-tree/filte
 import { useFavorites } from "./osint-tree/favorites";
 import { useTreeLayout } from "./osint-tree/use-tree-layout";
 import { ResourceDrawer } from "./osint-tree/resource-drawer";
-import { TreeNodeView } from "./osint-tree/tree-node-view";
-import { MOVE_TRANSITION } from "./osint-tree/constants";
+import { NodeDefs, TreeNodeView } from "./osint-tree/tree-node-view";
+import { EXIT_DURATION, INSTANT, MOVE_TRANSITION } from "./osint-tree/constants";
+
+
 
 type Props = { data: OsintData };
 
@@ -38,6 +40,9 @@ export default function OsintTree({ data }: Props) {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const { favorites, toggleFavorite } = useFavorites();
+    // True when the user's system asks for less motion: nothing is delayed, moved or animated
+    const reduceMotion = useReducedMotion() ?? false;
+    const svgRef = useRef<SVGSVGElement>(null);
 
     // The full tree built from the raw data, and a lookup table over its resources
     // (id -> resource + path from the root). Both only change when `data` does.
@@ -55,7 +60,7 @@ export default function OsintTree({ data }: Props) {
     );
 
     // Node positions, links, animation timing and SVG size for the visible tree
-    const layout = useTreeLayout(visibleData);
+    const layout = useTreeLayout(visibleData, reduceMotion);
 
     // Collapses everything and clears the search box
     const resetTree = () => {
@@ -88,6 +93,31 @@ export default function OsintTree({ data }: Props) {
                 resetTree();
                 break;
         }
+    };
+
+    // Called by the drawer once it has finished closing. Base UI only returns focus to HTML
+    // elements and our nodes are SVG, so we focus the node ourselves: the one that opened the
+    // drawer, or its category if that node is gone (e.g. the resource was un-favorited while the
+    // favorites filter is on). Returning false tells Base UI to leave focus alone; returning true
+    // falls back to its default behavior when there is nothing of ours to focus.
+    const restoreFocus = (): boolean => {
+        const svg = svgRef.current;
+        if (!svg || !selected) return true;
+
+        // Skip nodes that are fading out: they are about to disappear
+        const elements = Array.from(
+            svg.querySelectorAll<SVGElement>('[data-node-id]:not([aria-hidden="true"])')
+        );
+        const findNode = (id: string) => elements.find((el) => el.getAttribute("data-node-id") === id);
+
+        // The path is [root, category, resource]
+        const categoryId = selected.path[1]?.id;
+        const target = findNode(selected.node.id) ?? (categoryId ? findNode(categoryId) : undefined);
+        if (!target) return true;
+
+        // Base UI finishes its own close cleanup in a microtask, so focus after it
+        queueMicrotask(() => target.focus());
+        return false;
     };
 
     return (
@@ -133,10 +163,12 @@ export default function OsintTree({ data }: Props) {
                     breadcrumbs={selected?.path ?? []}
                     open={drawerOpen}
                     onOpenChange={setDrawerOpen}
+                    finalFocus={restoreFocus}
                     favorites={favorites}
                     toggleFavorite={toggleFavorite}
                 />
                 <svg
+                    ref={svgRef}
                     role="tree"
                     aria-label="OSINT resource tree"
                     width={layout.width}
@@ -144,53 +176,63 @@ export default function OsintTree({ data }: Props) {
                     viewBox={`0 0 ${layout.width} ${layout.height}`}
                     className="min-w-full"
                 >
-                    {/* Links: curved lines from parent to child, drawn in progressively */}
+                    <NodeDefs />
+
+                    {/* Links: curved lines from parent to child, drawn in progressively.
+                        Purely decorative, so hidden from assistive technology. */}
                     <g
+                        aria-hidden="true"
                         fill="none"
                         stroke="currentColor"
                         strokeOpacity="0.3"
                         strokeWidth="1.4"
                     >
-                        {layout.links.map((link) => {
-                            // Each link has its own start time (parent reveal + gap + sibling stagger);
-                            // links into nodes that are already on screen start at 0
-                            const delay = layout.linkStarts.get(link.target.data.id) ?? 0;
-                            // SVG path data for this link's curve
-                            const d = layout.pathFor(link.source, link.target);
+                        <AnimatePresence>
+                            {layout.links.map((link) => {
+                                // Each link has its own start time (parent arrival + gap + sibling stagger);
+                                // links into nodes that are already on screen start at 0
+                                const delay = layout.linkStarts.get(link.target.data.id) ?? 0;
+                                // SVG path data for this link's curve
+                                const d = layout.pathFor(link.source, link.target);
 
-                            return (
-                                <motion.path
-                                    key={`${link.source.data.id}-${link.target.data.id}`}
-                                    // Draw in from nothing; `d` is in initial too so new links start
-                                    // at their final shape, and later changes to `d` animate the curve
-                                    // as its nodes move.
-                                    initial={{ pathLength: 0, opacity: 0, d }}
-                                    animate={{ pathLength: 1, opacity: 1, d }}
-                                    transition={{
-                                        pathLength: { duration: layout.linkDuration, delay, ease: "easeOut" },
-                                        opacity: { duration: layout.linkDuration, delay, ease: "easeOut" },
-                                        d: MOVE_TRANSITION,
-                                    }}
-                                />
-                            );
-                        })}
+                                return (
+                                    <motion.path
+                                        key={`${link.source.data.id}-${link.target.data.id}`}
+                                        // Draw in from nothing; `d` is in initial too so new links start
+                                        // at their final shape, and later changes to `d` animate the curve
+                                        // as its nodes move.
+                                        initial={{ pathLength: 0, opacity: 0, d }}
+                                        animate={{ pathLength: 1, opacity: 1, d }}
+                                        // Removed links fade out
+                                        exit={{ opacity: 0, transition: { duration: reduceMotion ? 0 : EXIT_DURATION } }}
+                                        transition={{
+                                            pathLength: { duration: layout.linkDuration, delay, ease: "easeOut" },
+                                            opacity: { duration: layout.linkDuration, delay, ease: "easeOut" },
+                                            d: reduceMotion ? INSTANT : MOVE_TRANSITION,
+                                        }}
+                                    />
+                                );
+                            })}
+                        </AnimatePresence>
                     </g>
 
-                    {/* Nodes: root, category and resource boxes */}
-                    {layout.nodes.map((node) => (
-                        <TreeNodeView
-                            key={node.data.id}
-                            node={node}
-                            // d3 lays the tree out top-down, so its y is our horizontal position and x our vertical
-                            x={node.y + layout.offsetX}
-                            y={node.x + layout.offsetY}
-                            // Fade-in delay so nodes appear once their incoming link has been drawn
-                            revealDelay={layout.revealTimes.get(node.data.id) ?? 0}
-                            // Categories always appear expanded while a search is active
-                            isExpanded={hasQuery || Boolean(expanded[node.data.id])}
-                            onActivate={handleActivate}
-                        />
-                    ))}
+                    {/* Nodes: root, category and resource boxes. Removed nodes fade out. */}
+                    <AnimatePresence>
+                        {layout.nodes.map((node) => (
+                            <TreeNodeView
+                                key={node.data.id}
+                                node={node}
+                                // d3 lays the tree out top-down, so its y is our horizontal position and x our vertical
+                                x={node.y + layout.offsetX}
+                                y={node.x + layout.offsetY}
+                                // Only new nodes: where they unfold from and when they start moving
+                                enter={layout.enter.get(node.data.id)}
+                                // Categories always appear expanded while a search is active
+                                isExpanded={hasQuery || Boolean(expanded[node.data.id])}
+                                onActivate={handleActivate}
+                            />
+                        ))}
+                    </AnimatePresence>
                 </svg>
                 {/* Empty state: only the root is left, so nothing matched the search */}
                 {hasQuery && layout.nodes.length === 1 && (

@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react";
 import { Copy, ExternalLink, Star } from "lucide-react";
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -9,6 +10,9 @@ import { isSafeUrl } from "./url";
 // Drawer snap points: first stop at 31rem, second at full height (1 = 100%)
 const SNAP_POINTS = ["31rem", 1];
 
+// Same type as the drawer popup's own `finalFocus` prop (what gets focus when the drawer closes)
+type FinalFocus = ComponentProps<typeof DrawerContent>["finalFocus"];
+
 type ResourceDrawerProps = {
     /** The resource to show. Stays set while the drawer animates closed; null before the first selection. */
     resource: TreeNode | null;
@@ -17,6 +21,11 @@ type ResourceDrawerProps = {
     /** Whether the drawer is open. Kept separate from `resource` so content doesn't blank while closing. */
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    /**
+     * What gets focus when the drawer has finished closing (Base UI's `finalFocus`). A function can
+     * return an element to focus, `true` for the default behavior, or `false` to leave focus alone.
+     */
+    finalFocus?: FinalFocus;
     /** Set of favorited resource ids. */
     favorites: Set<string>;
     toggleFavorite: (id: string) => void;
@@ -33,6 +42,7 @@ export function ResourceDrawer({
     breadcrumbs,
     open,
     onOpenChange,
+    finalFocus,
     favorites,
     toggleFavorite,
 }: ResourceDrawerProps) {
@@ -49,7 +59,7 @@ export function ResourceDrawer({
             open={open}
             onOpenChange={onOpenChange}
         >
-            <DrawerContent >
+            <DrawerContent finalFocus={finalFocus}>
                 <DrawerHeader className="items-center">
                     <DrawerTitle className="text-2xl">
                         {resource?.name}

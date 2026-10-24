@@ -1,16 +1,50 @@
 import type { KeyboardEvent } from "react";
-import { motion } from "motion/react";
+import { motion, useIsPresent, useReducedMotion } from "motion/react";
 import type { HierarchyPointNode } from "d3-hierarchy";
 import type { TreeNode } from "./osint-types";
-import { MOVE_TRANSITION, NODE_BOX, NODE_BOX_CENTER_Y, NODE_WIDTHS } from "./constants";
+import type { NodeEnter } from "./compute-layout";
+import {
+    EXIT_DURATION,
+    INSTANT,
+    LABEL_PADDING,
+    MOVE_TRANSITION,
+    NODE_BOX,
+    NODE_BOX_CENTER_Y,
+    NODE_FADE_DURATION,
+    NODE_WIDTHS,
+    labelWidth,
+    type NodeKind,
+} from "./constants";
+
+const NODE_KINDS = Object.keys(NODE_WIDTHS) as NodeKind[];
+
+// Id of the clip path that limits a node's label to its label area
+const labelClipId = (kind: NodeKind) => `osint-label-clip-${kind}`;
+
+/**
+ * Shared SVG definitions: one clip path per node kind, so long names are cut at the edge of
+ * the label area (leaving room for the count badge in categories) instead of at a character
+ * count. Render this once inside the <svg>.
+ */
+export function NodeDefs() {
+    return (
+        <defs>
+            {NODE_KINDS.map((kind) => (
+                <clipPath key={kind} id={labelClipId(kind)}>
+                    <rect x={LABEL_PADDING} y={NODE_BOX.top} width={labelWidth(kind)} height={NODE_BOX.height} />
+                </clipPath>
+            ))}
+        </defs>
+    );
+}
 
 type TreeNodeViewProps = {
     node: HierarchyPointNode<TreeNode>;
     /** Position of the node's box in SVG coordinates. */
     x: number;
     y: number;
-    /** Seconds to wait before the node fades in (so it appears once its incoming link is drawn). */
-    revealDelay: number;
+    /** Set only for nodes that were not on screen before: where they unfold from and when they move. */
+    enter?: NodeEnter;
     /** Whether a category is shown expanded (also true while searching). */
     isExpanded: boolean;
     /** Called on click, Enter or Space. The parent decides what the node does (open, toggle, reset). */
@@ -19,14 +53,31 @@ type TreeNodeViewProps = {
 
 /**
  * Draws one node of the tree (root, category or resource): its box, label and focus ring.
- * Each node is a single tab stop that is activated by click, Enter or Space.
+ * Each node is a single tab stop that is activated by click, Enter or Space. It must be rendered
+ * inside an AnimatePresence so it can fade out when it is removed.
  */
-export function TreeNodeView({ node, x, y, revealDelay, isExpanded, onActivate }: TreeNodeViewProps) {
+export function TreeNodeView({ node, x, y, enter, isExpanded, onActivate }: TreeNodeViewProps) {
     const item = node.data;
     const isRoot = item.kind === "root";
     const isCategory = item.kind === "category";
     const isResource = item.kind === "resource";
     const width = NODE_WIDTHS[item.kind];
+
+    const reduceMotion = useReducedMotion();
+    // False while the node plays its exit animation: it is then a ghost that must not be focusable or clickable
+    const isPresent = useIsPresent();
+
+    // The nodes are flat siblings in the DOM, so screen readers get the tree structure from these attributes
+    const siblings = node.parent?.children ?? [node];
+    const treeItemProps = {
+        "aria-level": node.depth + 1,
+        "aria-setsize": siblings.length,
+        "aria-posinset": siblings.indexOf(node) + 1,
+        "aria-hidden": isPresent ? undefined : true,
+        tabIndex: isPresent ? 0 : -1,
+        // Lets the parent find this node's element (e.g. to return focus to it)
+        "data-node-id": item.id,
+    };
 
     // Category badge: "matched/total" while filtering (e.g. "2/4"), otherwise just the total
     const countLabel = isCategory
@@ -35,14 +86,16 @@ export function TreeNodeView({ node, x, y, revealDelay, isExpanded, onActivate }
             : `${item.count}`
         : "";
 
-    // Tooltip for root/category nodes. Categories add a count line to their description.
+    // The same information in words, for the accessible name and the tooltip
+    const countSummary = isCategory
+        ? item.matchedCount !== undefined
+            ? `${item.matchedCount} of ${item.count} resources match`
+            : `${item.count} ${item.count === 1 ? "resource" : "resources"}`
+        : "";
+
+    // Tooltip for root/category nodes. Names are clipped, so categories repeat theirs in full.
     const tooltip = isCategory
-        ? [
-            item.description || item.name,
-            item.matchedCount !== undefined
-                ? `${item.matchedCount} of ${item.count} resources match.`
-                : `${item.count} ${item.count === 1 ? "resource" : "resources"}.`,
-        ].join("\n")
+        ? [item.name, item.description, `${countSummary}.`].filter(Boolean).join("\n")
         : item.description || item.name;
 
     const activate = () => onActivate(node);
@@ -54,22 +107,32 @@ export function TreeNodeView({ node, x, y, revealDelay, isExpanded, onActivate }
         activate();
     };
 
+    // New nodes slide out of their parent while the link draws (same delay, duration and easing);
+    // nodes that are already on screen glide to their new position
+    const moveTransition = enter
+        ? { delay: enter.delay, duration: enter.duration, ease: "easeOut" as const }
+        : reduceMotion
+            ? INSTANT
+            : MOVE_TRANSITION;
+
     return (
-        // Outer group animates the node's position when the layout shifts
-        // (starting at its final position, so new nodes don't fly in from the
-        // origin); the inner motion.g handles the fade/scale-in, and each
-        // node's own <g> handles focus, clicks and keyboard input.
+        // Outer group animates the node's position: new nodes start at their parent (`enter.from`),
+        // existing ones start where they are. It also fades the node out when it is removed.
+        // The inner motion.g handles the fade/scale-in, and each node's own <g>
+        // handles focus, clicks and keyboard input.
         <motion.g
-            initial={{ x, y }}
+            initial={{ x: enter?.from.x ?? x, y: enter?.from.y ?? y }}
             animate={{ x, y }}
-            transition={MOVE_TRANSITION}
+            exit={{ opacity: 0, transition: { duration: reduceMotion ? 0 : EXIT_DURATION } }}
+            transition={moveTransition}
+            style={isPresent ? undefined : { pointerEvents: "none" }}
         >
             <motion.g
                 initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{
-                    duration: 0.2,
-                    delay: revealDelay,
+                    duration: reduceMotion ? 0 : NODE_FADE_DURATION,
+                    delay: enter?.delay ?? 0,
                     ease: "easeOut",
                 }}
                 // Scale from the node's own center rather than the SVG origin
@@ -83,7 +146,7 @@ export function TreeNodeView({ node, x, y, revealDelay, isExpanded, onActivate }
                     // on click, Enter or Space. `group` lets the rect react to focus.
                     <g
                         role="treeitem"
-                        tabIndex={0}
+                        {...treeItemProps}
                         aria-label={`${item.name}, opens details`}
                         className="group cursor-pointer outline-none"
                         onClick={activate}
@@ -101,17 +164,16 @@ export function TreeNodeView({ node, x, y, revealDelay, isExpanded, onActivate }
                             className="group-focus-visible:stroke-blue-500 group-focus-visible:stroke-2"
                         />
                         <text
-                            x="10"
+                            x={LABEL_PADDING}
                             y={NODE_BOX_CENTER_Y}
                             dominantBaseline="middle"
                             fontSize="12"
                             fill="var(--osint-resource-text, #334155)"
                             pointerEvents="none"
+                            // Long names are clipped to the label area; the tooltip shows the full name
+                            clipPath={`url(#${labelClipId(item.kind)})`}
                         >
-                            {/* Truncate long names to fit inside the box */}
-                            {item.name.length > 27
-                                ? `${item.name.slice(0, 26)}…`
-                                : item.name}
+                            {item.name}
                         </text>
                         {/* Native tooltip with full name and URL */}
                         <title>{`${item.name}\n${item.url}`}</title>
@@ -120,8 +182,15 @@ export function TreeNodeView({ node, x, y, revealDelay, isExpanded, onActivate }
                     // Root / category node: clickable and keyboard-accessible
                     <g
                         role="treeitem"
-                        tabIndex={0}
+                        {...treeItemProps}
                         aria-expanded={isRoot ? true : isCategory ? isExpanded : undefined}
+                        aria-label={
+                            isCategory
+                                ? `${item.name}, ${countSummary}`
+                                : isRoot
+                                    ? `${item.name}, resets the tree`
+                                    : item.name
+                        }
                         className={`group outline-none ${isRoot || isCategory ? "cursor-pointer" : ""}`}
                         onClick={activate}
                         onKeyDown={handleKeyDown}
@@ -142,7 +211,7 @@ export function TreeNodeView({ node, x, y, revealDelay, isExpanded, onActivate }
                             className="group-focus-visible:stroke-blue-500 group-focus-visible:stroke-2"
                         />
                         <text
-                            x="10"
+                            x={LABEL_PADDING}
                             y={NODE_BOX_CENTER_Y}
                             dominantBaseline="middle"
                             fontSize="12"
@@ -150,17 +219,17 @@ export function TreeNodeView({ node, x, y, revealDelay, isExpanded, onActivate }
                             fill={isRoot
                                 ? "var(--osint-root-text, #ffffff)"
                                 : "var(--osint-category-text, #0f172a)"}
+                            // Long names are clipped to the label area (categories keep the count badge clear)
+                            clipPath={`url(#${labelClipId(item.kind)})`}
                         >
-                            {/* Expand/collapse arrow (categories with resources only), then the truncated name */}
+                            {/* Expand/collapse arrow (categories with resources only), then the name */}
                             {isCategory && item.count ? `${isExpanded ? "▾" : "▸"} ` : ""}
-                            {item.name.length > (isRoot ? 20 : 25)
-                                ? `${item.name.slice(0, isRoot ? 19 : 24)}…`
-                                : item.name}
+                            {item.name}
                         </text>
-                        {/* Resource count, right-aligned inside category boxes */}
+                        {/* Count badge, right-aligned inside category boxes */}
                         {isCategory && (
                             <text
-                                x={width - 10}
+                                x={width - LABEL_PADDING}
                                 y={NODE_BOX_CENTER_Y}
                                 textAnchor="end"
                                 dominantBaseline="middle"
@@ -171,7 +240,7 @@ export function TreeNodeView({ node, x, y, revealDelay, isExpanded, onActivate }
                                 {countLabel}
                             </text>
                         )}
-                        {/* Native tooltip with the description (and, for categories, how many resources match) */}
+                        {/* Native tooltip: full name, description and how many resources match */}
                         <title>{tooltip}</title>
                     </g>
                 )}
