@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import { RESOURCE_ID_PREFIX } from "./build-tree";
+import { useSyncExternalStore } from "react";
 
 // localStorage key for the favorites
 export const FAVORITES_KEY = "osint-favorites";
@@ -36,42 +36,60 @@ export function saveFavorites(favorites: Set<string>) {
     }
 }
 
+// --- External store backing useFavorites -----------------------------------
+// The snapshot must keep the same reference until the data actually changes,
+// otherwise useSyncExternalStore re-renders forever. So it's cached here.
+const EMPTY_FAVORITES: Set<string> = new Set(); // what the server (and hydration) sees
+let cache: Set<string> | null = null;
+const listeners = new Set<() => void>();
+
+function emit() {
+    listeners.forEach((listener) => listener());
+}
+
+function getSnapshot(): Set<string> {
+    return (cache ??= loadFavorites());
+}
+
+function getServerSnapshot(): Set<string> {
+    return EMPTY_FAVORITES;
+}
+
+function subscribe(listener: () => void): () => void {
+    listeners.add(listener);
+
+    // Another tab changed favorites: reload and notify
+    const onStorage = (event: StorageEvent) => {
+        if (event.key !== null && event.key !== FAVORITES_KEY) return;
+        cache = loadFavorites();
+        emit();
+    };
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+        listeners.delete(listener);
+        window.removeEventListener("storage", onStorage);
+    };
+}
+
+// Adds the id if absent, removes it if present. Always builds a new Set so the snapshot reference changes.
+function toggleFavorite(id: string) {
+    const next = new Set(getSnapshot());
+    if (next.has(id)) {
+        next.delete(id);
+    } else {
+        next.add(id);
+    }
+    cache = next;
+    saveFavorites(next);
+    emit();
+}
+
 /**
- * Manages the set of favorited resource ids and keeps it in sync with
- * localStorage (see FAVORITES_KEY).
+ * The set of favorited resource ids, kept in sync with localStorage (see FAVORITES_KEY)
+ * and across tabs.
  */
 export function useFavorites() {
-    const [favorites, setFavorites] = useState<Set<string>>(new Set());
-    // Prevents the persist effect from overwriting stored data with the empty
-    // initial set before the stored value has been read.
-    const [favoritesLoaded, setFavoritesLoaded] = useState(false);
-
-    // Load saved favorites once on mount (localStorage is only available in the browser)
-    useEffect(() => {
-        setFavorites(loadFavorites());
-        setFavoritesLoaded(true);
-    }, []);
-
-    // Save favorites to localStorage whenever they change (after the initial load)
-    useEffect(() => {
-        if (!favoritesLoaded) return;
-        saveFavorites(favorites);
-    }, [favorites, favoritesLoaded]);
-
-    // Adds the id if absent, removes it if present. Copies the Set so React sees a new reference.
-    const toggleFavorite = (id: string) => {
-        setFavorites((prev) => {
-            const next = new Set(prev);
-
-            if (next.has(id)) {
-                next.delete(id);
-            } else {
-                next.add(id);
-            }
-
-            return next;
-        });
-    };
-
+    const favorites = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
     return { toggleFavorite, favorites };
 }
