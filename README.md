@@ -4,6 +4,9 @@ A categorized, searchable directory of OSINT (open-source intelligence) tools, s
 
 It is a static directory: no accounts, no backend, no API. The catalog is a single JSON file, and your favorites stay in your browser.
 
+## Live Demo
+Visit [Osint](osint-myk17.vercel.app) for a live demo.
+
 ## Features
 
 - **Tree view:** categories expand into resources, with animated layout (respects `prefers-reduced-motion`).
@@ -123,4 +126,4 @@ git push -u origin feature/short-name
 
 ## License
 
-Not yet specified. Add a `LICENSE` file before accepting outside contributions.
+This project is licensed under the terms of the MIT [license](/LICENSE.md).
