@@ -37,6 +37,8 @@ jobs:
             next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
 
       - run: npm ci
+      - name: Validate catalog
+        run: npm run validate:catalog
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
