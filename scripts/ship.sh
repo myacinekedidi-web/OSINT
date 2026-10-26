@@ -51,7 +51,7 @@ if [[ "${SKIP_CHECKS:-0}" != "1" ]]; then
   npm run lint && npm run typecheck && npm test
 fi
 
-git pull --ff-only
+git pull --ff-only --autostash
 git switch -c "$branch"
 
 if [[ ${#paths[@]} -gt 0 ]]; then
@@ -85,7 +85,7 @@ done
 
 # Back to a clean, up-to-date main
 git switch main
-git pull --ff-only
+git pull --ff-only --autostash
 git branch -D "$branch"    # -D because squash merges look "unmerged" to git
 git fetch --prune --quiet
 echo "Done: '$branch' merged and cleaned up."
