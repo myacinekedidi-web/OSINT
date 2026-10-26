@@ -156,7 +156,7 @@ export default function OsintTree({ data }: Props) {
                         any other text. Shown as pressed (filled star) while the filter is active. */}
                     <Button
                         variant={favoritesOnly ? "secondary" : "outline"}
-                        size="sm"
+                        size="icon"
                         aria-pressed={favoritesOnly}
                         onClick={() => setQuery(toggleFavoritesToken(query))}
                     >
