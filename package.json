@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "next typegen && tsc -p tsconfig.json && tsc -p tsconfig.test.json"
+    "typecheck": "next typegen && tsc -p tsconfig.json && tsc -p tsconfig.test.json",
+    "validate:catalog": "vitest run components/osint-tree/tests/catalog.test.ts"
   },
   "engines": { 
     "node": ">=22" 
