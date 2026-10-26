@@ -11,6 +11,7 @@ import { buildResourceIndex, buildTree } from "./osint-tree/build-tree";
 import { filterTree, parseQuery, toggleFavoritesToken } from "./osint-tree/filter-tree";
 import { useFavorites } from "./osint-tree/favorites";
 import { useTreeLayout } from "./osint-tree/use-tree-layout";
+import { getSearchStatus } from "./osint-tree/search-status";
 import { ResourceDrawer } from "./osint-tree/resource-drawer";
 import { NodeDefs, TreeNodeView } from "./osint-tree/tree-node-view";
 import { EXIT_DURATION, INSTANT, MOVE_TRANSITION } from "./osint-tree/constants";
@@ -18,6 +19,9 @@ import { EXIT_DURATION, INSTANT, MOVE_TRANSITION } from "./osint-tree/constants"
 
 
 type Props = { data: OsintData };
+
+// Id of the live region that reports search results (referenced by the search input)
+const SEARCH_STATUS_ID = "search-status";
 
 /**
  * Interactive, horizontally-laid-out tree of OSINT resources.
@@ -61,6 +65,14 @@ export default function OsintTree({ data }: Props) {
 
     // Node positions, links, animation timing and SVG size for the visible tree
     const layout = useTreeLayout(visibleData, reduceMotion);
+
+    // Result count / empty-state text for the live region below
+    const searchStatus = getSearchStatus({
+        hasQuery,
+        resourceCount: layout.nodes.filter((node) => node.data.kind === "resource").length,
+        favoritesOnly,
+        favoritesCount: favorites.size,
+    });
 
     // Collapses everything and clears the search box
     const resetTree = () => {
@@ -125,7 +137,7 @@ export default function OsintTree({ data }: Props) {
             {/* Header: title, help text, search box, favorites toggle and theme toggle */}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between px-2 py-1">
                 <div>
-                    <h2 className="text-lg font-semibold">{data.title || "OSINT Resources"}</h2>
+                    <h1 className="text-lg font-semibold">{data.title || "OSINT Resources"}</h1>
                     <p className="text-sm text-muted-foreground">
                         Expand categories to explore resources, or search by name or URL.
                     </p>
@@ -137,6 +149,7 @@ export default function OsintTree({ data }: Props) {
                         onChange={(event) => setQuery(event.target.value)}
                         placeholder="Search resources or @favorites [term]..."
                         aria-label="Search OSINT resources"
+                        aria-describedby={SEARCH_STATUS_ID}
                         className="w-full rounded-md border bg-background px-3 py-2 text-sm sm:w-80 sm:max-w-none"
                     />
                     {/* Toggles the favorites filter: adds/removes "@favorites" in the input and keeps
@@ -234,14 +247,16 @@ export default function OsintTree({ data }: Props) {
                         ))}
                     </AnimatePresence>
                 </svg>
-                {/* Empty state: only the root is left, so nothing matched the search */}
-                {hasQuery && layout.nodes.length === 1 && (
-                    <p className="p-4 text-sm text-muted-foreground">
-                        {favoritesOnly && favorites.size === 0
-                            ? "No favorites yet. Open a resource and use Add to Favorites."
-                            : "No matching resources found."}
-                    </p>
-                )}
+                {/* Live region, always mounted so screen readers announce changes to it. It is
+                    linked to the search input (aria-describedby). Visible only when nothing
+                    matched; otherwise it just announces the result count. */}
+                <p
+                    id={SEARCH_STATUS_ID}
+                    role="status"
+                    className={searchStatus.isEmpty ? "p-4 text-sm text-muted-foreground" : "sr-only"}
+                >
+                    {searchStatus.message}
+                </p>
             </div>
         </section>
     );

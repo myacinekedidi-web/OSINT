@@ -15,9 +15,26 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const description =
+  "A searchable, categorized directory of OSINT tools with usage guidance, tags and cautions for responsible verification.";
+
 export const metadata: Metadata = {
-  title: "OSINT",
-  description: "OSINT resources",
+  title: {
+    default: "OSINT Resources",
+    template: "%s | OSINT Resources",
+  },
+  description,
+  openGraph: {
+    type: "website",
+    siteName: "OSINT Resources",
+    title: "OSINT Resources",
+    description,
+  },
+  twitter: {
+    card: "summary",
+    title: "OSINT Resources",
+    description,
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
