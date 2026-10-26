@@ -14,7 +14,7 @@ Visit [Osint](https://osint-myk17.vercel.app) for a live demo.
 - **Favorites:** star resources and filter to them with the star button or by typing `@favorites` (optionally followed by a search term, e.g. `@favorites phone`).
 - **Resource drawer:** details, caution, "Go to Link" and "Copy URL" actions. Only well-formed `https` links are ever opened or copied.
 - **Light, dark and system themes.**
-- **Keyboard and screen-reader support:** labelled search and tree, focus restored after the drawer closes.
+- **Keyboard and screen-reader support:** labelled search whose result count is announced, a labelled tree, and focus restored after the drawer closes.
 
 ## Tech stack
 
@@ -40,17 +40,21 @@ npm run dev     # http://localhost:3000
 | `npm run typecheck` | Type-check the app and the tests |
 | `npm test` | Run the Vitest suite once |
 | `npm run test:watch` | Vitest in watch mode |
+| `npm run validate:catalog` | Check `data/osint-resources.json` against the catalog rules (see below) |
 
-CI (`.github/workflows/ci.yml`) runs lint, typecheck, test and build on every push to `main` and on every pull request.
+CI (`.github/workflows/ci.yml`) validates the catalog, then runs lint, typecheck, test and build on every push to `main` and on every pull request. Dependabot (`.github/dependabot.yml`) opens weekly update PRs, which go through the same checks.
 
 ## Project structure
 
 ```
 app/                       Next.js layout, page, global styles
 components/osintTree.tsx   Search, favorites toggle, tree and drawer wiring
-components/osint-tree/     Tree logic: build, filter, layout, favorites, URL guard, tests
+components/osint-tree/     Tree logic: build, filter, layout, favorites, search status,
+                           catalog validation, URL guard, and the tests for all of it
 components/ui/             Shared UI primitives
 data/osint-resources.json  The catalog
+scripts/ship.sh            One-command branch, PR and squash-merge (see Contributing)
+.github/                   CI workflow and Dependabot config
 ```
 
 ## The catalog
@@ -91,8 +95,18 @@ The catalog is a **curated starter set**, not an exhaustive list. Some categorie
 2. Add the resource with a unique `id` and an `https` URL.
 3. Fill in **all** of: `description`, `tags`, `bestFor`, `caution`. A resource without a caution is not accepted.
 4. Check that the URL works and is the tool's official address.
-5. Run `npm run dev`, search for the new entry, and open its drawer.
-6. Open a pull request (see below).
+5. Run `npm run validate:catalog`. It must pass; CI runs the same check.
+6. Run `npm run dev`, search for the new entry, and open its drawer.
+7. Open a pull request (see below).
+
+`validate:catalog` checks that:
+
+- every category and resource has a unique, kebab-case `id` (unique across the whole file);
+- every URL is a valid `https` URL and is not listed twice (a trailing slash or `#fragment` does not make it a different URL);
+- every resource has a non-empty `name`, `description`, `bestFor` and `caution`, and at least one kebab-case tag;
+- there are no unknown fields, so a typo like `cuation` fails instead of being silently ignored.
+
+Each problem is reported with the entry it belongs to, for example `categories[0] ("general-search").resources[2] ("example-com"): "caution" is required`.
 
 ### Inclusion criteria
 
@@ -112,16 +126,51 @@ This directory points to third-party tools. Use them lawfully, respect privacy a
 
 ## Contributing
 
-`main` is protected: changes go through a pull request, and the `verify` CI check must pass.
+`main` is protected: changes go through a pull request, and the `verify` CI check must pass. You cannot push to `main` directly.
+
+### Quick way: `git ship`
+
+`scripts/ship.sh` does the whole cycle in one command: branch from `main`, commit, push, open a PR, wait for CI, squash-merge, delete the branch and update your local `main`.
+
+**One-time setup**
+
+1. Install the [GitHub CLI](https://cli.github.com/) and run `gh auth login`.
+2. In the repository settings (Settings → General → Pull Requests), enable **Allow auto-merge**.
+3. Register the alias in your clone (it is not stored in the repo):
+   ```bash
+   git config alias.ship '!bash scripts/ship.sh'
+   ```
+
+The script needs Bash: Linux, macOS, WSL or Git Bash.
+
+**Usage**, from `main`, with your changes in the working tree:
+
+```bash
+git ship <branch-name> "<commit message>" [path ...]
+
+git ship feat/new-tool "feat: add Example to General Search" data/osint-resources.json
+git ship docs/typo "docs: fix typo"                 # no paths: stages everything
+SKIP_CHECKS=1 git ship fix/hotfix "fix: ..." app/   # skip the local lint/typecheck/test run
+```
+
+- With paths, **only those paths** are committed; other local changes stay uncommitted. Without paths, everything is staged (`git add -A`). Either way the script shows what will be shipped and asks for confirmation first.
+- It runs `npm run lint`, `typecheck` and `test` before pushing.
+- If a check fails in CI, the PR stays open and you stay on the branch. Fix it, push, and auto-merge completes the merge once `verify` is green.
+- Use it for your own changes. For a Dependabot PR, use `gh pr merge <number> --squash --auto`.
+
+### Manual way
 
 ```bash
 git switch main && git pull
 git switch -c feature/short-name
 # make changes, then:
-npm run lint && npm run typecheck && npm test && npm run build
-git add -A && git commit -m "describe the change"
+npm run validate:catalog && npm run lint && npm run typecheck && npm test && npm run build
+git add <files> && git commit -m "describe the change"
 git push -u origin feature/short-name
-# open a PR into main, wait for the green check, squash and merge
+gh pr create --fill --base main     # or open the PR on GitHub
+# wait for the green check, then squash and merge
+git switch main && git pull
+git branch -D feature/short-name    # -D: a squash merge looks "unmerged" to git
 ```
 
 ## License
