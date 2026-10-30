@@ -12,8 +12,8 @@
     "typecheck": "next typegen && tsc -p tsconfig.json && tsc -p tsconfig.test.json",
     "validate:catalog": "vitest run components/osint-tree/tests/catalog.test.ts"
   },
-  "engines": { 
-    "node": ">=22" 
+  "engines": {
+    "node": ">=22"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -31,12 +31,16 @@
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
     "@types/d3-hierarchy": "^3.1.7",
     "@types/node": "^24.19.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^10",
     "eslint-config-next": "16.4.2",
+    "jsdom": "^30.1.3",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^5.0.5"

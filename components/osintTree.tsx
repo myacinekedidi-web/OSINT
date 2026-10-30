@@ -12,6 +12,7 @@ import { filterTree, parseQuery, toggleFavoritesToken } from "./osint-tree/filte
 import { useFavorites } from "./osint-tree/favorites";
 import { useTreeLayout } from "./osint-tree/use-tree-layout";
 import { getSearchStatus } from "./osint-tree/search-status";
+import { SearchBox } from "./osint-tree/search-box";
 import { ResourceDrawer } from "./osint-tree/resource-drawer";
 import { NodeDefs, TreeNodeView } from "./osint-tree/tree-node-view";
 import { EXIT_DURATION, INSTANT, MOVE_TRANSITION } from "./osint-tree/constants";
@@ -143,15 +144,7 @@ export default function OsintTree({ data }: Props) {
                     </p>
                 </div>
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <input
-                        name="searchByResource"
-                        value={query}
-                        onChange={(event) => setQuery(event.target.value)}
-                        placeholder="Search resources or @favorites [term]..."
-                        aria-label="Search OSINT resources"
-                        aria-describedby={SEARCH_STATUS_ID}
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm sm:w-80 sm:max-w-none"
-                    />
+                    <SearchBox value={query} onChange={setQuery} describedBy={SEARCH_STATUS_ID} />
                     {/* Toggles the favorites filter: adds/removes "@favorites" in the input and keeps
                         any other text. Shown as pressed (filled star) while the filter is active. */}
                     <Button
