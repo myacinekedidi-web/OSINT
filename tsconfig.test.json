@@ -3,6 +3,6 @@
   "compilerOptions": {
     "incremental": false
   },
-  "include": ["next-env.d.ts", "components/**/tests/**/*.ts"],
+  "include": ["next-env.d.ts", "components/**/tests/**/*.ts", "components/**/tests/**/*.tsx"],
   "exclude": ["node_modules"]
 }

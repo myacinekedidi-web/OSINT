@@ -66,6 +66,33 @@ export function toggleFavoritesToken(raw: string): string {
 }
 
 /**
+ * The raw input without its leading favorites token: what the text box shows once the
+ * token is displayed as a chip.
+ *   "@favorites foo" -> "foo"      "@favorites" -> ""      "foo" -> "foo"
+ */
+export function stripFavoritesToken(raw: string): string {
+    const input = raw.trimStart();
+    return FAVORITES_TOKEN_PATTERN.test(input) ? input.slice(FAVORITES_TOKEN.length).trimStart() : raw;
+}
+
+/**
+ * Inverse of stripFavoritesToken: builds the raw input from the chip state and the text
+ * box. (The trailing space after the token lets the user keep typing.)
+ */
+export function composeQuery(favoritesOnly: boolean, text: string): string {
+    return favoritesOnly ? `${FAVORITES_TOKEN} ${text}` : text;
+}
+
+/**
+ * The token to suggest while the user is still typing it ("@", "@fa", "@FAV"...),
+ * or null when the text is anything else.
+ */
+export function suggestFavoritesToken(text: string): string | null {
+    const typed = text.trimStart().toLowerCase();
+    return /^@[a-z]*$/.test(typed) && FAVORITES_TOKEN.startsWith(typed) ? FAVORITES_TOKEN : null;
+}
+
+/**
  * The single definition of "this resource matches the query": it passes the
  * favorites filter (when requested) and its searchable text contains the query text.
  * Meant for resource nodes.
