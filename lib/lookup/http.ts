@@ -8,18 +8,30 @@ import { ProviderError, type ProviderContext } from "./provider";
 
 export const DEFAULT_MAX_BYTES = 1_000_000;
 
-/** Reads a response body as text, refusing anything larger than `maxBytes`. */
-export async function readTextLimited(response: Response, maxBytes: number): Promise<string> {
-    const tooLarge = () => new ProviderError("error", "The data source's response was too large.");
-
-    const declared = Number(response.headers.get("content-length"));
-    if (Number.isFinite(declared) && declared > maxBytes) {
-        await response.body?.cancel();
-        throw tooLarge();
+/** Thrown when a body is larger than the limit that was asked for. */
+export class BodyTooLargeError extends Error {
+    constructor() {
+        super("Body too large");
+        this.name = "BodyTooLargeError";
     }
-    if (!response.body) return "";
+}
 
-    const reader = response.body.getReader();
+/** Anything with a body and headers: a fetch `Response` or an incoming `Request`. */
+type BodySource = { body: ReadableStream<Uint8Array> | null; headers: Headers };
+
+/**
+ * Reads a body as text, throwing BodyTooLargeError as soon as it is known to exceed
+ * `maxBytes` (from `content-length` when declared, otherwise while streaming).
+ */
+export async function readBodyLimited(source: BodySource, maxBytes: number): Promise<string> {
+    const declared = Number(source.headers.get("content-length"));
+    if (Number.isFinite(declared) && declared > maxBytes) {
+        await source.body?.cancel();
+        throw new BodyTooLargeError();
+    }
+    if (!source.body) return "";
+
+    const reader = source.body.getReader();
     const chunks: Uint8Array[] = [];
     let total = 0;
     for (;;) {
@@ -28,7 +40,7 @@ export async function readTextLimited(response: Response, maxBytes: number): Pro
         total += value.byteLength;
         if (total > maxBytes) {
             await reader.cancel();
-            throw tooLarge();
+            throw new BodyTooLargeError();
         }
         chunks.push(value);
     }
@@ -40,6 +52,18 @@ export async function readTextLimited(response: Response, maxBytes: number): Pro
         offset += chunk.byteLength;
     }
     return new TextDecoder().decode(bytes);
+}
+
+/** Provider-side wrapper: a too-large upstream response becomes a ProviderError. */
+export async function readTextLimited(response: Response, maxBytes: number): Promise<string> {
+    try {
+        return await readBodyLimited(response, maxBytes);
+    } catch (error) {
+        if (error instanceof BodyTooLargeError) {
+            throw new ProviderError("error", "The data source's response was too large.");
+        }
+        throw error;
+    }
 }
 
 export type GetJsonOptions = {

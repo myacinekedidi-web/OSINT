@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { getJson, readTextLimited } from "../http";
+import { BodyTooLargeError, getJson, readBodyLimited, readTextLimited } from "../http";
 import { ProviderError, type ProviderContext } from "../provider";
 
 const makeCtx = (fetchImpl: typeof fetch): ProviderContext => ({
@@ -118,5 +118,22 @@ describe("getJson", () => {
         const fetchImpl = respond("x".repeat(500));
         const error = await rejection(getJson("https://example.test/x", makeCtx(fetchImpl), { maxBytes: 100 }));
         expect(error.message).toContain("too large");
+    });
+});
+
+describe("readBodyLimited", () => {
+    const post = (body: BodyInit | null, headers: Record<string, string> = {}) =>
+        new Request("https://example.test/", { method: "POST", body, headers });
+
+    it("reads an incoming request body", async () => {
+        expect(await readBodyLimited(post("hello"), 100)).toBe("hello");
+    });
+
+    it("returns an empty string for a request without a body", async () => {
+        expect(await readBodyLimited(new Request("https://example.test/"), 100)).toBe("");
+    });
+
+    it("throws BodyTooLargeError, not a ProviderError", async () => {
+        await expect(readBodyLimited(post("x".repeat(200)), 100)).rejects.toBeInstanceOf(BodyTooLargeError);
     });
 });
