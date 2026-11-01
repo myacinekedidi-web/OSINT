@@ -5,7 +5,7 @@
  */
 
 import { z } from "zod";
-import type { LookupInput } from "../lookup/detect-input";
+import type { LookupInput } from "./detect-input";
 import type { Finding, SourceId, SourceResult, SourceStatus } from "./report";
 
 export type FetchLike = typeof fetch;

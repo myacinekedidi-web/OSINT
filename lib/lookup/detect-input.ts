@@ -64,7 +64,7 @@ const MESSAGES: Record<RejectReason, string> = {
     url_credentials: "Remove the username and password from the URL; credentials are never looked up.",
 };
 
-const MAX_INPUT_LENGTH = 2048;
+export const MAX_INPUT_LENGTH = 2048;
 const MAX_EMAIL_LENGTH = 254;
 const MAX_LOCAL_PART_LENGTH = 64;
 const MAX_DOMAIN_LENGTH = 253;
