@@ -89,6 +89,7 @@ export async function getJson(
         headers: { accept: "application/json", ...options.headers },
     });
 
+    // FIX: either keep and add condition for DENY 403 or replace
     if (response.status === 429) {
         await response.body?.cancel();
         const seconds = Number(response.headers.get("retry-after"));

@@ -3,8 +3,9 @@
 import { useMemo, useRef, useState } from "react";
 import type { HierarchyPointNode } from "d3-hierarchy";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Star } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Radar, Star } from "lucide-react";
+import Link from "next/link";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { ModeToggle } from "@/components/toggleTheme";
 import type { OsintData, TreeNode } from "./osint-tree/osint-types";
 import { buildResourceIndex, buildTree } from "./osint-tree/build-tree";
@@ -16,6 +17,9 @@ import { SearchBox } from "./osint-tree/search-box";
 import { ResourceDrawer } from "./osint-tree/resource-drawer";
 import { NodeDefs, TreeNodeView } from "./osint-tree/tree-node-view";
 import { EXIT_DURATION, INSTANT, MOVE_TRANSITION } from "./osint-tree/constants";
+import Image from "next/image";
+import LogoImage from '@/public/logo.png'
+
 
 
 
@@ -138,7 +142,12 @@ export default function OsintTree({ data }: Props) {
             {/* Header: title, help text, search box, favorites toggle and theme toggle */}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between px-2 py-1">
                 <div>
-                    <h1 className="text-lg font-semibold">{data.title || "OSINT Resources"}</h1>
+                    <h1 className="text-lg font-semibold">{data.title?.replaceAll("-", " ") || "OSINT Resources"}</h1>
+                    {/* <Image
+                        src={LogoImage}
+                        alt="osint website logo"
+                        width={120}
+                        loading="eager" /> */}
                     <p className="text-sm text-muted-foreground">
                         Expand categories to explore resources, or search by name or URL.
                     </p>
@@ -158,6 +167,10 @@ export default function OsintTree({ data }: Props) {
                         />
                         <span className="sr-only">Show only your favorites</span>
                     </Button>
+                    <Link href="/lookup" className={buttonVariants({ variant: "outline", size: "sm" })}>
+                        <Radar aria-hidden="true" />
+                        Lookup
+                    </Link>
                     <ModeToggle />
                 </div>
             </div>
