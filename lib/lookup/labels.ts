@@ -14,7 +14,14 @@ export type SourceInfo = {
 };
 
 export const SOURCE_INFO: Record<SourceId, SourceInfo> = {
-    internetdb: { name: "Shodan InternetDB", url: "https://internetdb.shodan.io/", covers: "IPv4 addresses" },
+    rdap: { name: "RDAP (domain registration)", url: "https://about.rdap.org/", covers: "domains, and the domain part of URLs and emails" },
+    dns: {
+        name: "DNS lookup (Cloudflare, Google as backup)",
+        url: "https://developers.cloudflare.com/1.1.1.1/encryption/dns-over-https/make-api-requests/dns-json/",
+        covers: "domains, and the domain part of URLs and emails",
+    },
+    internetdb: { name: "Shodan InternetDB", url: "https://internetdb.shodan.io/", covers: "IPv4 addresses, and the addresses domains and URLs resolve to" },
+    crtsh: { name: "crt.sh (Certificate Transparency)", url: "https://crt.sh/", covers: "domains and URLs" },
 };
 
 /** Falls back to the raw id so a report from a newer server never breaks an older page. */
@@ -48,6 +55,9 @@ export const CATEGORY_LABEL: Record<FindingCategory, string> = {
     exposure: "Exposure",
     vulnerability: "Vulnerability",
     infrastructure: "Infrastructure",
+    registration: "Registration",
+    dns: "DNS",
+    certificates: "Certificates",
 };
 
 /** "ports" -> "Ports", "http_headers" -> "Http headers". */

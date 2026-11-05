@@ -3,8 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { LookupOutcome, SubmitFn } from "../../../lib/lookup/client";
+import { SOURCE_INFO } from "../../../lib/lookup/labels";
 import { sampleReport } from "../../../lib/lookup/tests/fixtures";
-
 import { LookupWorkbench } from "../lookup-workbench";
 
 vi.mock("@/components/ui/toast", () => ({ toast: { add: vi.fn() } }));
@@ -181,7 +181,10 @@ describe("transparency", () => {
     it("tells the user what happens to their input", () => {
         render(<LookupWorkbench submit={makeSubmit()} />);
         const note = screen.getByText(/does not store what you look up/);
-        expect(note.textContent).toContain("Shodan InternetDB (IPv4 addresses)");
+        for (const source of Object.values(SOURCE_INFO)) {
+            expect(note.textContent).toContain(source.name);
+            expect(note.textContent).toContain(source.covers);
+        }
         expect(screen.getByText(/Verify them independently/)).toBeTruthy();
     });
 });

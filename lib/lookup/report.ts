@@ -10,12 +10,19 @@ export const SEVERITIES = ["info", "low", "medium", "high", "critical"] as const
 export const SeveritySchema = z.enum(SEVERITIES);
 export type Severity = z.infer<typeof SeveritySchema>;
 
-export const FINDING_CATEGORIES = ["exposure", "vulnerability", "infrastructure"] as const;
+export const FINDING_CATEGORIES = [
+    "exposure",
+    "vulnerability",
+    "infrastructure",
+    "registration",
+    "dns",
+    "certificates",
+] as const;
 export const FindingCategorySchema = z.enum(FINDING_CATEGORIES);
 export type FindingCategory = z.infer<typeof FindingCategorySchema>;
 
 /** Identifiers of the data sources. Add one per provider. */
-export const SOURCE_IDS = ["internetdb"] as const;
+export const SOURCE_IDS = ["rdap", "dns", "internetdb", "crtsh"] as const;
 export const SourceIdSchema = z.enum(SOURCE_IDS);
 export type SourceId = z.infer<typeof SourceIdSchema>;
 
